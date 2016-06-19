@@ -1,5 +1,7 @@
 # HolmuskTest
 
+Welcome! This repository is a work around for the .NET-Challenge posted in the url https://github.com/Holmusk/.NET-Challenge
+
 Steps to setup the application
 
 1. Open the solution with visual studio.
