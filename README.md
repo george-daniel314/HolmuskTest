@@ -2,6 +2,7 @@
 
 Welcome! This repository is a work around for the .NET-Challenge posted in the url :
 https://github.com/Holmusk/.NET-Challenge
+This solution is done with Visual Studio 2012 and .NET Framework 4.5
 
 Steps to setup the application
 
