@@ -96,6 +96,10 @@
       <Project>{e88418c8-2403-4f36-a0fa-23b9251f6f4f}</Project>
       <Name>Holmusk.DeveloperChallenge.Entity</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Holmusk.DeveloperChallenge.Services\Holmusk.DeveloperChallenge.Services.csproj">
+      <Project>{6d304048-9475-4325-94fc-a47d4e82df74}</Project>
+      <Name>Holmusk.DeveloperChallenge.Services</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />

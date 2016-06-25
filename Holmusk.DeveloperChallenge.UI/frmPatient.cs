@@ -1,6 +1,7 @@
 ﻿using Holmusk.DeveloperChallenge.BusinessLogic;
 using Holmusk.DeveloperChallenge.Common.Enums;
 using Holmusk.DeveloperChallenge.Entity;
+using Holmusk.DeveloperChallenge.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -22,8 +23,7 @@ namespace Holmusk.DeveloperChallenge.UI
         #region Page Events
         private void Patient_Load(object sender, EventArgs e)
         {
-            string urlFHIR = @"http://fhir-dstu1-nprogram.azurewebsites.net/Patient/?_format=json";
-            dynamic deserializedJsonResponse = GetFHIRResponseBasedOnURL(urlFHIR);
+            dynamic deserializedJsonResponse = GetResponse();
 
             IEnumerable<PatientEntity> patients = ConvertFHIRResponseToCustom(deserializedJsonResponse);
             gridPatientsFHIR.AutoGenerateColumns = false;
@@ -36,15 +36,18 @@ namespace Holmusk.DeveloperChallenge.UI
         #region Control Events
         private void btnSearch_Click(object sender, EventArgs e)
         {
+            dynamic deserializedJsonResponse;
             if (!string.IsNullOrEmpty(txtSearch.Text))
             {
-                string urlFHIR = string.Format(@"http://fhir-dstu1-nprogram.azurewebsites.net/Patient/search?name={0}&_format=json", txtSearch.Text);
-                dynamic deserializedJsonResponse = GetFHIRResponseBasedOnURL(urlFHIR);
-
-                List<PatientEntity> patients = ConvertFHIRResponseToCustom(deserializedJsonResponse);
-                gridPatientsFHIR.AutoGenerateColumns = false;
-                gridPatientsFHIR.DataSource = patients;
+                deserializedJsonResponse = GetResponse(txtSearch.Text);
             }
+            else
+            {
+                deserializedJsonResponse = GetResponse();
+            }
+            List<PatientEntity> patients = ConvertFHIRResponseToCustom(deserializedJsonResponse);
+            gridPatientsFHIR.AutoGenerateColumns = false;
+            gridPatientsFHIR.DataSource = patients;
         }
 
         private void btnImport_Click(object sender, EventArgs e)
@@ -107,7 +110,7 @@ namespace Holmusk.DeveloperChallenge.UI
         {
             ClearFields();
         }
-                
+
         private void grdPatientsHolmusk_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             if (grdPatientsHolmusk.Columns[e.ColumnIndex].Name == "Edit")
@@ -208,7 +211,7 @@ namespace Holmusk.DeveloperChallenge.UI
         private static IEnumerable<PatientEntity> ConvertFHIRResponseToCustom(dynamic deserializedJsonResponse)
         {
             List<PatientEntity> patients = new List<PatientEntity>();
-            if (deserializedJsonResponse != null)
+            if (deserializedJsonResponse.entry != null)
             {
                 foreach (var item in deserializedJsonResponse.entry)
                 {
@@ -237,17 +240,11 @@ namespace Holmusk.DeveloperChallenge.UI
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        private static dynamic GetFHIRResponseBasedOnURL(string url)
+        private static dynamic GetResponse(string name = null)
         {
             dynamic deserializedJsonResponse = null;
             try
             {
-                //code for json Response consumption from REST based service.
-                WebRequest request = WebRequest.Create(url);
-                request.Method = "GET";
-                request.ContentType = @"application/json; charset=utf-8";
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                string jsonResponse = string.Empty;
                 //anonymus type to parse response object to custom format.
                 var responseJsonType =
                     new
@@ -267,10 +264,8 @@ namespace Holmusk.DeveloperChallenge.UI
                         }
                     }
                     };
-                using (StreamReader sr = new StreamReader(response.GetResponseStream()))
-                {
-                    jsonResponse = sr.ReadToEnd();
-                }
+                Client client = new Client(new FHIRService());
+                string jsonResponse = client.GetResponse(name);
                 JsonSerializer jsonSerializer = new JsonSerializer();
                 deserializedJsonResponse = jsonSerializer.Deserialize(new StringReader(jsonResponse), responseJsonType.GetType());
             }
