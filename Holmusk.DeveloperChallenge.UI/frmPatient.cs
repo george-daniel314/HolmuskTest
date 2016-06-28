@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reactive.Linq;
 using System.Windows.Forms;
 
 namespace Holmusk.DeveloperChallenge.UI
@@ -65,8 +66,7 @@ namespace Holmusk.DeveloperChallenge.UI
                         IsActive = Convert.ToBoolean(row.Cells["IsActive"].Value),
                         Name = row.Cells["PatientName"].Value.ToString()
                     };
-                    PatientManager patientManager = new PatientManager();
-                    patientManager.AddPatient(patient);
+                    PatientEntity patientEntiy = new PatientManager().AddPatient(patient);
                     row.Cells["IsSelected"].Value = false;
                 }
             }
@@ -76,29 +76,16 @@ namespace Holmusk.DeveloperChallenge.UI
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            PatientEntity patient = null;
             if (CheckIsValid())
             {
                 if (btnSave.Text == "Save")
                 {
-                    patient = SavePatient(patient);
-                    if (patient.Id > 0)
-                    {
-                        MessageBox.Show("Patient details saved successfully.");
-                        ClearFields();
-                    }
-                    else
-                    {
-                        MessageBox.Show("OOPs!! Something went wrong. Please contact administrator.");
-                    }
+                    SavePatient();
                 }
                 else
                 {
-                    patient = UpdatePatient(patient);
-                    ClearFields();
-                    MessageBox.Show("Patient details updated successfully.");
+                    UpdatePatient();
                 }
-                BindPatientsGrid();
             }
             else
             {
@@ -119,32 +106,39 @@ namespace Holmusk.DeveloperChallenge.UI
             }
             else if (grdPatientsHolmusk.Columns[e.ColumnIndex].Name == "Delete")
             {
-                DeletePatient(e);
-                BindPatientsGrid();
+                int id = Convert.ToInt32(grdPatientsHolmusk.Rows[e.RowIndex].Cells["H_Id"].Value);
+                DeletePatient(id);
             }
         }
         #endregion
 
         #region Helper Methods
+
         /// <summary>
         /// Add Patient object to database
         /// </summary>
-        /// <param name="patient"></param>
-        /// <returns></returns>
-        private PatientEntity SavePatient(PatientEntity patient)
+        private void SavePatient()
         {
-            patient = new PatientEntity()
-            {
-                Address = txtAddress.Text,
-                BirthDate = Convert.ToDateTime(dtpBirthDate.Text),
-                ContactNumber = txtContactNumber.Text,
-                Name = txtPatientName.Text,
-                Gender = rbnMale.Checked == true ? EnumGender.Male.ToString() : EnumGender.Female.ToString(),
-                IsActive = chkIsActive.Checked
-            };
-            PatientManager patientManager = new PatientManager();
-            patient = patientManager.AddPatient(patient);
-            return patient;
+            PatientEntity patient = new PatientEntity()
+             {
+                 Address = txtAddress.Text,
+                 BirthDate = Convert.ToDateTime(dtpBirthDate.Text),
+                 ContactNumber = txtContactNumber.Text,
+                 Name = txtPatientName.Text,
+                 Gender = rbnMale.Checked == true ? EnumGender.Male.ToString() : EnumGender.Female.ToString(),
+                 IsActive = chkIsActive.Checked
+             };
+
+            IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
+                     () =>
+                     {
+                         PatientEntity patientEntiy = new PatientManager().AddPatient(patient);
+                         return patientEntiy;
+                     });
+            patientEntity.Subscribe(loadedData =>
+             {
+                 PerformUIActions(loadedData, true);
+             });
         }
 
         /// <summary>
@@ -152,31 +146,46 @@ namespace Holmusk.DeveloperChallenge.UI
         /// </summary>
         /// <param name="patient"></param>
         /// <returns></returns>
-        private PatientEntity UpdatePatient(PatientEntity patient)
+        private void UpdatePatient()
         {
-            patient = new PatientEntity()
+            PatientEntity patient = new PatientEntity()
+             {
+                 Id = Convert.ToInt32(txtIdForEdit.Text),
+                 Address = txtAddress.Text,
+                 BirthDate = Convert.ToDateTime(dtpBirthDate.Text),
+                 ContactNumber = txtContactNumber.Text,
+                 Name = txtPatientName.Text,
+                 Gender = rbnMale.Checked == true ? EnumGender.Male.ToString() : EnumGender.Female.ToString(),
+                 IsActive = chkIsActive.Checked
+             };
+            IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
+                                () =>
+                                {
+                                    PatientEntity patientEntiy = new PatientManager().UpdatePatient(patient);
+                                    return patientEntiy;
+                                });
+            patientEntity.Subscribe(loadedData =>
             {
-                Id = Convert.ToInt32(txtIdForEdit.Text),
-                Address = txtAddress.Text,
-                BirthDate = Convert.ToDateTime(dtpBirthDate.Text),
-                ContactNumber = txtContactNumber.Text,
-                Name = txtPatientName.Text,
-                Gender = rbnMale.Checked == true ? EnumGender.Male.ToString() : EnumGender.Female.ToString(),
-                IsActive = chkIsActive.Checked
-            };
-            PatientManager patientManager = new PatientManager();
-            patient = patientManager.UpdatePatient(patient);
-            return patient;
+                PerformUIActions(loadedData, false);
+            });
         }
 
         /// <summary>
         /// Delete patient detils by changing status to inactive.
         /// </summary>
         /// <param name="e"></param>
-        private void DeletePatient(DataGridViewCellEventArgs e)
+        private void DeletePatient(int id)
         {
-            PatientManager patientManager = new PatientManager();
-            patientManager.DeletePatient(new PatientEntity() { Id = Convert.ToInt32(grdPatientsHolmusk.Rows[e.RowIndex].Cells["H_Id"].Value) });
+            IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
+                                 () =>
+                                 {
+                                     PatientEntity patientEntiy = new PatientManager().DeletePatient(new PatientEntity() { Id = id });
+                                     return patientEntiy;
+                                 });
+            patientEntity.Subscribe((loadedData) =>
+            {
+                BindPatientsGrid();
+            });
         }
 
         /// <summary>
@@ -211,7 +220,7 @@ namespace Holmusk.DeveloperChallenge.UI
         private static IEnumerable<PatientEntity> ConvertFHIRResponseToCustom(dynamic deserializedJsonResponse)
         {
             List<PatientEntity> patients = new List<PatientEntity>();
-            if (deserializedJsonResponse.entry != null)
+            if (deserializedJsonResponse != null && deserializedJsonResponse.entry != null)
             {
                 foreach (var item in deserializedJsonResponse.entry)
                 {
@@ -285,9 +294,61 @@ namespace Holmusk.DeveloperChallenge.UI
         /// </summary>
         private void BindPatientsGrid()
         {
-            IEnumerable<PatientEntity> patients = new PatientManager().GetPatients();
-            grdPatientsHolmusk.AutoGenerateColumns = false;
-            grdPatientsHolmusk.DataSource = patients;
+            IObservable<IEnumerable<PatientEntity>> patients = Observable.Start<IEnumerable<PatientEntity>>(
+                 () =>
+                 {
+                     IEnumerable<PatientEntity> patientEntities = new PatientManager().GetPatients();
+                     return patientEntities;
+                 });
+            patients.Subscribe(loadedData =>
+            {
+                BindPatientsGridMainThread(loadedData);
+            });
+        }
+
+        /// <summary>
+        /// Bind data in main thread
+        /// </summary>
+        /// <param name="patients"></param>
+        private void BindPatientsGridMainThread(IEnumerable<PatientEntity> patients)
+        {
+            if (this.grdPatientsHolmusk.InvokeRequired)
+            {
+                this.grdPatientsHolmusk.BeginInvoke((MethodInvoker)delegate()
+                {
+                    this.grdPatientsHolmusk.AutoGenerateColumns = false;
+                    this.grdPatientsHolmusk.DataSource = patients;
+                });
+            }
+        }
+
+        /// <summary>
+        /// Do UI actions in main thread after save method executes in background thread.
+        /// </summary>
+        /// <param name="patient"></param>
+        private void PerformUIActions(PatientEntity patient, bool isSave)
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke((MethodInvoker)delegate()
+                {
+                    BindPatientsGrid();
+                    if (patient.Id > 0 && isSave)
+                    {
+                        MessageBox.Show("Patient details saved successfully.");
+                        ClearFields();
+                    }
+                    else if (patient.Id > 0 && !isSave)
+                    {
+                        MessageBox.Show("Patient details updated successfully.");
+                        ClearFields();
+                    }
+                    else
+                    {
+                        MessageBox.Show("OOPs!! Something went wrong. Please contact administrator.");
+                    }
+                });
+            }
         }
 
         /// <summary>
