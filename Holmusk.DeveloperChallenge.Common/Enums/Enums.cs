@@ -9,4 +9,13 @@ namespace Holmusk.DeveloperChallenge.Common.Enums
         Male = 0,
         Female = 1,
     }
+
+    /// <summary>
+    /// Calling context for initializing objects.
+    /// </summary>
+    public enum CallingContext
+    {
+        None = 0,
+        ContextTypeA = 1,
+    }
 }

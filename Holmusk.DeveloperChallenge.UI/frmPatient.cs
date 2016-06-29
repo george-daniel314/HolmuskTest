@@ -68,7 +68,7 @@ namespace Holmusk.DeveloperChallenge.UI
                         IsActive = Convert.ToBoolean(row.Cells["IsActive"].Value),
                         Name = row.Cells["PatientName"].Value.ToString()
                     };
-                    PatientEntity patientEntiy = new PatientManager().AddPatient(patient);
+                    PatientEntity patientEntiy = BLFactory.CreateInstance(CallingContext.ContextTypeA).AddPatient(patient);
                     row.Cells["IsSelected"].Value = false;
                 }
             }
@@ -134,7 +134,7 @@ namespace Holmusk.DeveloperChallenge.UI
             IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
                         () =>
                         {
-                            PatientEntity patientEntiy = new PatientManager().AddPatient(patient);
+                            PatientEntity patientEntiy = BLFactory.CreateInstance(CallingContext.ContextTypeA).AddPatient(patient);
                             return patientEntiy;
                         });
 
@@ -176,7 +176,7 @@ namespace Holmusk.DeveloperChallenge.UI
             IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
                          () =>
                          {
-                             PatientEntity patientEntiy = new PatientManager().UpdatePatient(patient);
+                             PatientEntity patientEntiy = BLFactory.CreateInstance(CallingContext.ContextTypeA).UpdatePatient(patient);
                              return patientEntiy;
                          });
 
@@ -207,7 +207,7 @@ namespace Holmusk.DeveloperChallenge.UI
             IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
                            () =>
                            {
-                               PatientEntity patientEntiy = new PatientManager().DeletePatient(new PatientEntity() { Id = id });
+                               PatientEntity patientEntiy = BLFactory.CreateInstance(CallingContext.ContextTypeA).DeletePatient(new PatientEntity() { Id = id });
                                return patientEntiy;
                            });
             patientEntity.SubscribeOn(NewThreadScheduler.Default)
@@ -337,7 +337,7 @@ namespace Holmusk.DeveloperChallenge.UI
             IObservable<IEnumerable<PatientEntity>> patients = Observable.Start<IEnumerable<PatientEntity>>(
                 () =>
                 {
-                    IEnumerable<PatientEntity> patientEntities = new PatientManager().GetPatients();
+                    IEnumerable<PatientEntity> patientEntities = BLFactory.CreateInstance(CallingContext.ContextTypeA).GetPatients();
                     return patientEntities;
                 });
             patients.SubscribeOn(NewThreadScheduler.Default)

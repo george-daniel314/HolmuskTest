@@ -42,7 +42,7 @@ namespace Holmusk.DeveloperChallenge.Entity
         /// <summary>
         /// True for active and flase for inactive.
         /// </summary>
-        public bool IsActive { get; set; } 
+        public bool IsActive { get; set; }
         #endregion
     }
 }

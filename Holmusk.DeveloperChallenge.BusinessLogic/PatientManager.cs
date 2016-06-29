@@ -8,7 +8,7 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
     /// <summary>
     /// For managing all business related functionality for Patient object.
     /// </summary>
-    public class PatientManager
+    public class PatientManager : IPatientManager
     {
         #region Public Methods
         /// <summary>
@@ -18,7 +18,7 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
         /// <returns>An object of type PatientEntity.</returns>
         public PatientEntity AddPatient(PatientEntity patient)
         {
-            PatientDataAccess dataAccess = new PatientDataAccess();
+            IPatientDataAccess dataAccess = DALFactory.CreateInstance(CallingContext.ContextTypeA);
             Patient patientDBEntity = ConvertEntityToDBEntity(patient);
             patientDBEntity = dataAccess.AddPatient(patientDBEntity);
             patient = ConvertDBEntityToEntity(patient, patientDBEntity);
@@ -32,7 +32,7 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
         /// <returns>An object of type PatientEntity.</returns>
         public PatientEntity GetPatientById(int id)
         {
-            PatientDataAccess dataAccess = new PatientDataAccess();
+            IPatientDataAccess dataAccess = DALFactory.CreateInstance(CallingContext.ContextTypeA);
             Patient patientDBEntity = dataAccess.GetPatientById(id);
             PatientEntity patient = null;
             patient = ConvertDBEntityToEntity(patient, patientDBEntity);
@@ -45,8 +45,8 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
         /// <returns>An enumerable collection of object having type as PatientEntity.</returns>
         public IEnumerable<PatientEntity> GetPatients()
         {
-            PatientDataAccess dataAccess = new PatientDataAccess();
-            List<Patient> patientsDBEntity = dataAccess.GetPatients();
+            IPatientDataAccess dataAccess = DALFactory.CreateInstance(CallingContext.ContextTypeA);
+            IEnumerable<Patient> patientsDBEntity = dataAccess.GetPatients();
             List<PatientEntity> patients = new List<PatientEntity>();
             foreach (var item in patientsDBEntity)
             {
@@ -72,7 +72,7 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
         /// <returns>An object of type PatientEntity.</returns>
         public PatientEntity UpdatePatient(PatientEntity patient)
         {
-            PatientDataAccess dataAccess = new PatientDataAccess();
+            IPatientDataAccess dataAccess = DALFactory.CreateInstance(CallingContext.ContextTypeA);
             Patient patientDBEntity = ConvertEntityToDBEntity(patient);
             patientDBEntity = dataAccess.UpdatePatient(patientDBEntity);
             patient = ConvertDBEntityToEntity(patient, patientDBEntity);
@@ -86,12 +86,12 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
         /// <returns>An object of type PatientEntity.</returns>
         public PatientEntity DeletePatient(PatientEntity patient)
         {
-            PatientDataAccess dataAccess = new PatientDataAccess();
+            IPatientDataAccess dataAccess = DALFactory.CreateInstance(CallingContext.ContextTypeA);
             Patient patientDBEntity = ConvertEntityToDBEntity(patient);
             patientDBEntity = dataAccess.DeletePatient(patientDBEntity);
             patient = ConvertDBEntityToEntity(patient, patientDBEntity);
             return patient;
-        } 
+        }
         #endregion
 
         #region Private Methods
@@ -135,7 +135,7 @@ namespace Holmusk.DeveloperChallenge.BusinessLogic
                 IsActive = patient.IsActive
             };
             return patientDBEntity;
-        } 
+        }
         #endregion
     }
 }

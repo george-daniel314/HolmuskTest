@@ -6,7 +6,7 @@ namespace Holmusk.DeveloperChallenge.DataAccess
     /// <summary>
     /// Handles all database transaction related functionality for Patient object.
     /// </summary>
-    public class PatientDataAccess
+    public class PatientDataAccess : IPatientDataAccess
     {
         #region Methods
         /// <summary>
@@ -47,7 +47,7 @@ namespace Holmusk.DeveloperChallenge.DataAccess
         /// Get list of object from database.
         /// </summary>
         /// <returns>An enumerable collection of object having type as Patient.</returns>
-        public List<Patient> GetPatients()
+        public IEnumerable<Patient> GetPatients()
         {
             List<Patient> patients = null;
             using (HolmuskHealthCareEntities context = new HolmuskHealthCareEntities())
@@ -98,7 +98,7 @@ namespace Holmusk.DeveloperChallenge.DataAccess
                 context.SaveChanges();
                 return patient;
             }
-        } 
+        }
         #endregion
     }
 }

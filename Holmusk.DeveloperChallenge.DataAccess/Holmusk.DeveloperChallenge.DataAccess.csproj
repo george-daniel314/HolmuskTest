@@ -48,6 +48,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DALFactory.cs" />
+    <Compile Include="IPatientDataAccess.cs" />
     <Compile Include="PatientDataAccess.cs" />
     <Compile Include="Model.Context.cs">
       <AutoGen>True</AutoGen>
@@ -94,6 +96,12 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Holmusk.DeveloperChallenge.Common\Holmusk.DeveloperChallenge.Common.csproj">
+      <Project>{1dcb4668-99e9-4081-b057-6f1bcb3fdcf4}</Project>
+      <Name>Holmusk.DeveloperChallenge.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
