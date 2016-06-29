@@ -7,7 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Holmusk.DeveloperChallenge.UI
@@ -130,15 +132,28 @@ namespace Holmusk.DeveloperChallenge.UI
              };
 
             IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
-                     () =>
-                     {
-                         PatientEntity patientEntiy = new PatientManager().AddPatient(patient);
-                         return patientEntiy;
-                     });
-            patientEntity.Subscribe(loadedData =>
-             {
-                 PerformUIActions(loadedData, true);
-             });
+                        () =>
+                        {
+                            PatientEntity patientEntiy = new PatientManager().AddPatient(patient);
+                            return patientEntiy;
+                        });
+
+            patientEntity.SubscribeOn(NewThreadScheduler.Default)
+                         .ObserveOn(SynchronizationContext.Current)
+
+                         .Subscribe(loadedPatient =>
+                                {
+                                    BindPatientsGrid();
+                                    if (loadedPatient.Id > 0)
+                                    {
+                                        MessageBox.Show("Patient details saved successfully.");
+                                        ClearFields();
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("OOPs!! Something went wrong. Please contact administrator.");
+                                    }
+                                });
         }
 
         /// <summary>
@@ -159,15 +174,28 @@ namespace Holmusk.DeveloperChallenge.UI
                  IsActive = chkIsActive.Checked
              };
             IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
-                                () =>
-                                {
-                                    PatientEntity patientEntiy = new PatientManager().UpdatePatient(patient);
-                                    return patientEntiy;
-                                });
-            patientEntity.Subscribe(loadedData =>
-            {
-                PerformUIActions(loadedData, false);
-            });
+                         () =>
+                         {
+                             PatientEntity patientEntiy = new PatientManager().UpdatePatient(patient);
+                             return patientEntiy;
+                         });
+
+            patientEntity.SubscribeOn(NewThreadScheduler.Default)
+                         .ObserveOn(SynchronizationContext.Current)
+
+                         .Subscribe(loadedPatient =>
+                         {
+                             BindPatientsGrid();
+                             if (loadedPatient.Id > 0)
+                             {
+                                 MessageBox.Show("Patient details updated successfully.");
+                                 ClearFields();
+                             }
+                             else
+                             {
+                                 MessageBox.Show("OOPs!! Something went wrong. Please contact administrator.");
+                             }
+                         });
         }
 
         /// <summary>
@@ -177,15 +205,27 @@ namespace Holmusk.DeveloperChallenge.UI
         private void DeletePatient(int id)
         {
             IObservable<PatientEntity> patientEntity = Observable.Start<PatientEntity>(
-                                 () =>
-                                 {
-                                     PatientEntity patientEntiy = new PatientManager().DeletePatient(new PatientEntity() { Id = id });
-                                     return patientEntiy;
-                                 });
-            patientEntity.Subscribe((loadedData) =>
-            {
-                BindPatientsGrid();
-            });
+                           () =>
+                           {
+                               PatientEntity patientEntiy = new PatientManager().DeletePatient(new PatientEntity() { Id = id });
+                               return patientEntiy;
+                           });
+            patientEntity.SubscribeOn(NewThreadScheduler.Default)
+                         .ObserveOn(SynchronizationContext.Current)
+
+                         .Subscribe(loadedPatient =>
+                          {
+                              BindPatientsGrid();
+                              if (loadedPatient.Id > 0)
+                              {
+                                  MessageBox.Show("Patient details deleted successfully.");
+                                  ClearFields();
+                              }
+                              else
+                              {
+                                  MessageBox.Show("OOPs!! Something went wrong. Please contact administrator.");
+                              }
+                          });
         }
 
         /// <summary>
@@ -295,60 +335,18 @@ namespace Holmusk.DeveloperChallenge.UI
         private void BindPatientsGrid()
         {
             IObservable<IEnumerable<PatientEntity>> patients = Observable.Start<IEnumerable<PatientEntity>>(
-                 () =>
-                 {
-                     IEnumerable<PatientEntity> patientEntities = new PatientManager().GetPatients();
-                     return patientEntities;
-                 });
-            patients.Subscribe(loadedData =>
-            {
-                BindPatientsGridMainThread(loadedData);
-            });
-        }
-
-        /// <summary>
-        /// Bind data in main thread
-        /// </summary>
-        /// <param name="patients"></param>
-        private void BindPatientsGridMainThread(IEnumerable<PatientEntity> patients)
-        {
-            if (this.grdPatientsHolmusk.InvokeRequired)
-            {
-                this.grdPatientsHolmusk.BeginInvoke((MethodInvoker)delegate()
+                () =>
                 {
-                    this.grdPatientsHolmusk.AutoGenerateColumns = false;
-                    this.grdPatientsHolmusk.DataSource = patients;
+                    IEnumerable<PatientEntity> patientEntities = new PatientManager().GetPatients();
+                    return patientEntities;
                 });
-            }
-        }
-
-        /// <summary>
-        /// Do UI actions in main thread after save method executes in background thread.
-        /// </summary>
-        /// <param name="patient"></param>
-        private void PerformUIActions(PatientEntity patient, bool isSave)
-        {
-            if (this.InvokeRequired)
-            {
-                this.BeginInvoke((MethodInvoker)delegate()
+            patients.SubscribeOn(NewThreadScheduler.Default)
+           .ObserveOn(SynchronizationContext.Current)
+                .Subscribe(loadedData =>
                 {
-                    BindPatientsGrid();
-                    if (patient.Id > 0 && isSave)
-                    {
-                        MessageBox.Show("Patient details saved successfully.");
-                        ClearFields();
-                    }
-                    else if (patient.Id > 0 && !isSave)
-                    {
-                        MessageBox.Show("Patient details updated successfully.");
-                        ClearFields();
-                    }
-                    else
-                    {
-                        MessageBox.Show("OOPs!! Something went wrong. Please contact administrator.");
-                    }
+                    grdPatientsHolmusk.AutoGenerateColumns = false;
+                    grdPatientsHolmusk.DataSource = loadedData;
                 });
-            }
         }
 
         /// <summary>
